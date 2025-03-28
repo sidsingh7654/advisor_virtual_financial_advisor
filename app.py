@@ -34,26 +34,12 @@ Debt_to_Income_Ratio = st.number_input("Debt to Income Ratio")
 if st.button("Get Recommendation"):
 
     # Create dataframe
-    X1 = pd.DataFrame({
-        'Mthly_HH_Income': [Mthly_HH_Income],
-        'Mthly_HH_Expense': [Mthly_HH_Expense],
-        'Emi_or_Rent_Amt': [Emi_or_Rent_Amt],
-        'No_of_Earning_Members': [No_of_Earning_Members],
-        'Savings_Amount': [Savings_Amount],
-        'Investment_Horizon': [Investment_Horizon],
-        'Risk_Tolerance': [Risk_Tolerance],
-        'Investment_Experience': [Investment_Experience],
-        'Market_Volatility_Tolerance': [Market_Volatility_Tolerance],
-        'Short_Term_Goal': [Short_Term_Goal],
-        'Mid_Term_Goal': [Mid_Term_Goal],
-        'Long_Term_Goal': [Long_Term_Goal],
-        'Goal_Based_Investing': [Goal_Based_Investing],
-        'Preferred_Investment_Type': [Preferred_Investment_Type],
-        'Adjusted_DTI': [Adjusted_DTI],
-        'Savings_Rate': [Savings_Rate],
-        'Disposable_Income': [Disposable_Income],
-        'Debt_to_Income_Ratio': [Debt_to_Income_Ratio]
-    })
+    X1 = np.array([[Mthly_HH_Income, Mthly_HH_Expense, Emi_or_Rent_Amt, No_of_Earning_Members,
+                Savings_Amount, Investment_Horizon, Risk_Tolerance, Investment_Experience,
+                Market_Volatility_Tolerance, Short_Term_Goal, Mid_Term_Goal, Long_Term_Goal,
+                Goal_Based_Investing, Preferred_Investment_Type, Adjusted_DTI, Savings_Rate,
+                Disposable_Income, Debt_to_Income_Ratio]])
+
 
     # Encode categorical
     for col in ['Risk_Tolerance', 'Investment_Experience', 'Market_Volatility_Tolerance', 'Goal_Based_Investing', 'Preferred_Investment_Type']:
