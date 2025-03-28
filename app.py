@@ -67,6 +67,9 @@ if st.button("Predict Recommended Asset Class"):
         asset_class = stage1_model.predict(features)[0]
         st.success(f"Recommended Investment Asset Class: **{asset_class}**")
 
+
+
+
         # Example Stage 2: predict stock or mutual fund (placeholder for now)
         st.info("Now recommending specific products (Stage 2)...")
         stage2_prediction = stage2_model.predict(features)[0]
@@ -75,7 +78,9 @@ if st.button("Predict Recommended Asset Class"):
     except Exception as e:
         st.error(f"Prediction failed. Please check inputs. Error: {e}")
 
-        st.subheader("Stage 3: Product Recommendation")
+
+
+    st.subheader("Stage 3: Product Recommendation")
 
         # Equity Products
         stock_list = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "BAJFINANCE.NS"]
