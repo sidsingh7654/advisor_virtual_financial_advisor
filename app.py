@@ -1,92 +1,76 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import joblib
 
-# -------------------------
-# Load Models
-# -------------------------
+# Load the models
 stage1_model = joblib.load("stage1_gbm.pkl")
 stage2_model = joblib.load("stage2_gbm.pkl")
 
-# -------------------------
-# Encoding Dictionaries
-# -------------------------
-risk_tolerance_map = {'Low': 0, 'Moderate': 1, 'High': 2}
-investment_experience_map = {'None': 0, 'Beginner': 1, 'Intermediate': 2, 'Expert': 3}
-market_volatility_tolerance_map = {'Low': 0, 'Medium': 1, 'High': 2}
-goal_based_investing_map = {'No': 0, 'Yes': 1}
-preferred_investment_type_map = {'Equity': 0, 'Debt': 1, 'Mutual Fund': 2}
-short_term_goal_map = {'Short-Term Savings': 0, 'Vacation': 1}
-mid_term_goal_map = {'Car Purchase': 0, 'Education Fund': 1, 'Home Renovation': 2}
-long_term_goal_map = {'Wealth Accumulation': 0, 'Long-Term Security': 1}
-investment_horizon_map = {'Short': 0, 'Medium': 1, 'Long': 2}
+st.set_page_config(page_title="AI-Powered Virtual Financial Advisor", layout="centered")
 
-# -------------------------
-# Streamlit App
-# -------------------------
-st.title("AI-Powered Virtual Financial Advisor")
+st.title("💰 AI-Powered Virtual Financial Advisor")
 
-st.header("Enter your Financial Profile")
+st.header("📋 User Financial Profile")
 
-# Inputs
-Mthly_HH_Income = st.number_input("Monthly Household Income", value=10000)
-Mthly_HH_Expense = st.number_input("Monthly Household Expense", value=5000)
-Emi_or_Rent_Amt = st.number_input("EMI or Rent Amount", value=2000)
-No_of_Earning_Members = st.number_input("Number of Earning Members", value=2)
-Savings_Amount = st.number_input("Savings Amount", value=1000)
-Debt_to_Income_Ratio = st.number_input("Debt to Income Ratio", value=0.3)
+# Input fields for all Stage 1 features
+Mthly_HH_Income = st.number_input("Monthly Household Income", min_value=0)
+Mthly_HH_Expense = st.number_input("Monthly Household Expense", min_value=0)
+Emi_or_Rent_Amt = st.number_input("EMI or Rent Amount", min_value=0)
+No_of_Earning_Members = st.number_input("Number of Earning Members", min_value=0, step=1)
+Savings_Amount = st.number_input("Current Savings Amount", min_value=0)
+Investment_Horizon = st.selectbox("Investment Horizon (years)", [1, 3, 5, 10, 15, 20])
+Risk_Tolerance = st.slider("Risk Tolerance (1 = Low, 5 = High)", 1, 5)
+Investment_Experience = st.selectbox("Investment Experience (1 = None, 5 = Expert)", [1, 2, 3, 4, 5])
+Market_Volatility_Tolerance = st.slider("Market Volatility Tolerance (1 = Low, 5 = High)", 1, 5)
+Short_Term_Goal = st.number_input("Short Term Goal Amount", min_value=0)
+Mid_Term_Goal = st.number_input("Mid Term Goal Amount", min_value=0)
+Long_Term_Goal = st.number_input("Long Term Goal Amount", min_value=0)
+Goal_Based_Investing = st.selectbox("Interested in Goal Based Investing?", ["Yes", "No"])
+Preferred_Investment_Type = st.selectbox("Preferred Investment Type", ["Equity", "Mutual Fund", "Debt", "Gold", "Real Estate"])
+Adjusted_DTI = st.number_input("Adjusted Debt-to-Income Ratio (%)", min_value=0.0, format="%.2f")
+Savings_Rate = st.number_input("Savings Rate (%)", min_value=0.0, format="%.2f")
+Disposable_Income = st.number_input("Disposable Income", min_value=0)
+Debt_to_Income_Ratio = st.number_input("Debt-to-Income Ratio (%)", min_value=0.0, format="%.2f")
 
-Investment_Horizon = st.selectbox("Investment Horizon", list(investment_horizon_map.keys()))
-Risk_Tolerance = st.selectbox("Risk Tolerance", list(risk_tolerance_map.keys()))
-Preferred_Investment_Type = st.selectbox("Preferred Investment Type", list(preferred_investment_type_map.keys()))
-Investment_Experience = st.selectbox("Investment Experience", list(investment_experience_map.keys()))
-Market_Volatility_Tolerance = st.selectbox("Market Volatility Tolerance", list(market_volatility_tolerance_map.keys()))
-Short_Term_Goal = st.selectbox("Short Term Goal", list(short_term_goal_map.keys()))
-Mid_Term_Goal = st.selectbox("Mid Term Goal", list(mid_term_goal_map.keys()))
-Long_Term_Goal = st.selectbox("Long Term Goal", list(long_term_goal_map.keys()))
-Goal_Based_Investing = st.selectbox("Goal Based Investing", list(goal_based_investing_map.keys()))
+# Preprocess inputs
+goal_investing = 1 if Goal_Based_Investing == "Yes" else 0
+investment_type_map = {"Equity": 0, "Mutual Fund": 1, "Debt": 2, "Gold": 3, "Real Estate": 4}
+investment_type_encoded = investment_type_map.get(Preferred_Investment_Type, 0)
 
-Adjusted_DTI = Debt_to_Income_Ratio * 100
-Savings_Rate = (Savings_Amount / Mthly_HH_Income) * 100 if Mthly_HH_Income != 0 else 0
-Disposable_Income = Mthly_HH_Income - Mthly_HH_Expense - Emi_or_Rent_Amt
+# Arrange features in model-expected order
+features = np.array([[
+    Mthly_HH_Income,
+    Mthly_HH_Expense,
+    Emi_or_Rent_Amt,
+    No_of_Earning_Members,
+    Savings_Amount,
+    Investment_Horizon,
+    Risk_Tolerance,
+    Investment_Experience,
+    Market_Volatility_Tolerance,
+    Short_Term_Goal,
+    Mid_Term_Goal,
+    Long_Term_Goal,
+    goal_investing,
+    investment_type_encoded,
+    Adjusted_DTI,
+    Savings_Rate,
+    Disposable_Income,
+    Debt_to_Income_Ratio
+]])
 
-if st.button("Predict Investment Class"):
+if st.button("Predict Recommended Asset Class"):
+    try:
+        asset_class = stage1_model.predict(features)[0]
+        st.success(f"Recommended Investment Asset Class: **{asset_class}**")
 
-    # -------------------------
-    # Encode Categorical Inputs
-    # -------------------------
-    Investment_Horizon = investment_horizon_map[Investment_Horizon]
-    Risk_Tolerance = risk_tolerance_map[Risk_Tolerance]
-    Preferred_Investment_Type = preferred_investment_type_map[Preferred_Investment_Type]
-    Investment_Experience = investment_experience_map[Investment_Experience]
-    Market_Volatility_Tolerance = market_volatility_tolerance_map[Market_Volatility_Tolerance]
-    Short_Term_Goal = short_term_goal_map[Short_Term_Goal]
-    Mid_Term_Goal = mid_term_goal_map[Mid_Term_Goal]
-    Long_Term_Goal = long_term_goal_map[Long_Term_Goal]
-    Goal_Based_Investing = goal_based_investing_map[Goal_Based_Investing]
+        # Example Stage 2: predict stock or mutual fund (placeholder for now)
+        st.info("Now recommending specific products (Stage 2)...")
+        stage2_prediction = stage2_model.predict(features)[0]
+        st.success(f"Recommended Product: **{stage2_prediction}**")
 
-    # -------------------------
-    # Stage 1 Prediction
-    # -------------------------
-    X1 = np.array([[Mthly_HH_Income, Mthly_HH_Expense, Emi_or_Rent_Amt, No_of_Earning_Members,
-                    Savings_Amount, Investment_Horizon, Risk_Tolerance, Investment_Experience,
-                    Market_Volatility_Tolerance, Short_Term_Goal, Mid_Term_Goal, Long_Term_Goal,
-                    Goal_Based_Investing, Preferred_Investment_Type, Adjusted_DTI, Savings_Rate,
-                    Disposable_Income, Debt_to_Income_Ratio]])
-
-    asset_class = stage1_model.predict(X1)[0]
-    st.success(f"Recommended Investment Class: {asset_class}")
-
-
-     # ------------------ Stage 2 ------------------
-    X_stage2 = X1.copy()
-   if "Preferred_Investment_Type" not in X_stage2.columns:
-    X_stage2["Preferred_Investment_Type"] = asset_class
-    else:
-    X_stage2.loc[:, "Preferred_Investment_Type"] = asset_class
-    recommended_product = stage2_model.predict(X_stage2)[0]
-    st.success(f"Recommended Product: {recommended_product}")
+    except Exception as e:
+        st.error(f"Prediction failed. Please check inputs. Error: {e}")
 
     # ------------------ Stage 3 ------------------
     st.subheader("Stage 3: Product Recommendation")
