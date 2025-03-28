@@ -1,4 +1,9 @@
-    @gather_metrics("number_input")
+import streamlit as st
+import pandas as pd
+import numpy as np
+import yfinance as yf
+from sklearn.ensemble import GradientBoostingRegressor
+import joblib
     def number_input(
         self,
         label: str,
