@@ -129,9 +129,9 @@ if st.button("Predict Recommended Asset Class"):
 
     # Filter Recommended Products
     df_recommend = df_stage3[
-        (df_stage3['Product_Type'] == asset_class) &
-        (df_stage3['Risk_Level'] == risk_tolerance) &
-        (df_stage3['Investment_Horizon (Years)'] <= (5 if inv_horizon == "Long" else (3 if inv_horizon == "Mid" else 1)))
+    (df_stage3['Product_Type'] == asset_class) &
+    (df_stage3['Risk_Level'] == ("High" if Risk_Tolerance >= 4 else "Medium")) &
+    (df_stage3['Investment_Horizon (Years)'] <= Investment_Horizon)
     ].sort_values(by='Expected_Return (%)', ascending=False).head(5)
 
     st.subheader("Top Recommended Products 🔥")
