@@ -127,12 +127,20 @@ if st.button("Predict Recommended Asset Class"):
     # Combine Products
     df_stage3 = pd.concat([df_stocks, df_mf], ignore_index=True)
 
-    # Filter Recommended Products
+    # --- Stage 3 Filtering ---
+    selected_risk = "High" if Risk_Tolerance >= 4 else "Medium"
+    selected_horizon = Investment_Horizon
+
     df_recommend = df_stage3[
-    (df_stage3['Product_Type'] == asset_class) &
-    (df_stage3['Risk_Level'] == ("High" if Risk_Tolerance >= 4 else "Medium")) &
-    (df_stage3['Investment_Horizon (Years)'] <= Investment_Horizon)
+        (df_stage3['Product_Type'] == Preferred_Investment_Type) &
+        (df_stage3['Risk_Level'] == selected_risk) &
+        (df_stage3['Investment_Horizon (Years)'] <= selected_horizon)
     ].sort_values(by='Expected_Return (%)', ascending=False).head(5)
 
+    # --- Display ---
     st.subheader("Top Recommended Products 🔥")
+
+    if not df_recommend.empty:
     st.dataframe(df_recommend.reset_index(drop=True))
+    else:
+    st.warning("No matching products found based on your preferences. Try adjusting risk or horizon.")
