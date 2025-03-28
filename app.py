@@ -79,15 +79,16 @@ if st.button("Predict Investment Class"):
     st.success(f"Recommended Investment Class: {asset_class}")
 
 
-    # Stage 2 Prediction (Stock / MF)
-    X2 = X1.copy()
-    X2["Predicted_Asset"] = asset_class
-    recommendation = stage2_model.predict(X2)[0]
-    st.info(f"Recommended Product: {recommendation}")
+     # ------------------ Stage 2 ------------------
+    X_stage2 = input_data.copy()
+    X_stage2["Preferred_Investment_Type"] = asset_class
+    recommended_product = stage2_model.predict(X_stage2)[0]
+    st.success(f"Recommended Product: {recommended_product}")
 
-    # ------------------ Stage 3 (Dynamic Product List) ------------------
+    # ------------------ Stage 3 ------------------
+    st.subheader("Stage 3: Product Recommendation")
 
-    # Get Stock Data
+    # Equity Products
     stock_list = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "BAJFINANCE.NS"]
     stock_data = []
 
@@ -107,14 +108,14 @@ if st.button("Predict Investment Class"):
 
     df_stocks = pd.DataFrame(stock_data)
 
-    # Get Mutual Fund Data
+    # Mutual Fund Products
     response = requests.get("https://www.amfiindia.com/spages/NAVAll.txt")
     data = response.text
 
     mf_data = []
     for line in data.split("\n"):
         tokens = line.strip().split(";")
-        if len(tokens) > 5:
+        if len(tokens) > 5 and tokens[0].isdigit():
             mf_data.append({
                 "Product_ID": tokens[0],
                 "Product_Type": "Mutual Fund",
@@ -128,14 +129,14 @@ if st.button("Predict Investment Class"):
 
     df_mf = pd.DataFrame(mf_data)
 
-    # Combine Stage 3 Dataset
+    # Combine Products
     df_stage3 = pd.concat([df_stocks, df_mf], ignore_index=True)
 
-    # Filter Recommendations
+    # Filter Recommended Products
     df_recommend = df_stage3[
         (df_stage3['Product_Type'] == asset_class) &
-        (df_stage3['Risk_Level'] == Risk_Tolerance) &
-        (df_stage3['Investment_Horizon (Years)'] <= Investment_Horizon)
+        (df_stage3['Risk_Level'] == risk_tolerance) &
+        (df_stage3['Investment_Horizon (Years)'] <= (5 if inv_horizon == "Long" else (3 if inv_horizon == "Mid" else 1)))
     ].sort_values(by='Expected_Return (%)', ascending=False).head(5)
 
     st.subheader("Top Recommended Products 🔥")
