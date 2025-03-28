@@ -75,8 +75,11 @@ if st.button("Predict Recommended Asset Class"):
 
         # ---------- Stage 2 ----------
         st.info("Now recommending specific products (Stage 2)...")
-        stage2_output = stage2_model.predict(features)[0]
-        st.success(f"Recommended Product Score: **{stage2_output:.2f}**")
+        stage2_output = stage2_model.predict(features).flatten()
+        st.success("Recommended Product Scores:")
+        for i, score in enumerate(stage2_output):
+            st.write(f"Product {i+1} Score: {score:.2f}")
+
 
         # ---------- Stage 3 ----------
         st.subheader("Stage 3: Product Recommendation")
