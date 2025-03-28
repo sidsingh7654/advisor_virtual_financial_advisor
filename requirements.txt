@@ -1,7 +1,8 @@
 streamlit
 pandas
-scikit-learn
-yfinance
 numpy
+scikit-learn
 joblib
+yfinance
+beautifulsoup4
 requests
