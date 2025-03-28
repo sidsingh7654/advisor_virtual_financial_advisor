@@ -80,7 +80,7 @@ if st.button("Predict Investment Class"):
 
 
      # ------------------ Stage 2 ------------------
-    X_stage2 = input_data.copy()
+    X_stage2 = X1.copy()
     X_stage2["Preferred_Investment_Type"] = asset_class
     recommended_product = stage2_model.predict(X_stage2)[0]
     st.success(f"Recommended Product: {recommended_product}")
