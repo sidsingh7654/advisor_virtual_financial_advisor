@@ -1,63 +1,76 @@
+# app.py
+
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+import joblib
 import yfinance as yf
 import requests
 from bs4 import BeautifulSoup
 
-# --------------------------- Load Models ---------------------------
-stage1_model = pickle.load(open("stage1_gbm.pkl", "rb"))
-stage2_model = pickle.load(open("stage2_gbm.pkl", "rb"))
+# Load models (use joblib)
+stage1_model = joblib.load("stage1_gbm.pkl")
+stage2_model = joblib.load("stage2_gbm.pkl")
 
-# --------------------------- Stage 1 Features ---------------------------
-stage1_features = ['Mthly_HH_Income',
- 'Mthly_HH_Expense',
- 'Emi_or_Rent_Amt',
- 'No_of_Earning_Members',
- 'Savings_Amount',
- 'Investment_Horizon',
- 'Risk_Tolerance',
- 'Investment_Experience',
- 'Market_Volatility_Tolerance',
- 'Short_Term_Goal',
- 'Mid_Term_Goal',
- 'Long_Term_Goal',
- 'Goal_Based_Investing',
- 'Preferred_Investment_Type',
- 'Adjusted_DTI',
- 'Savings_Rate',
- 'Disposable_Income',
- 'Debt_to_Income_Ratio']
+st.title("AI-Powered Virtual Financial Advisor 💸")
 
-# --------------------------- UI ---------------------------
-st.title("AI-Powered Virtual Financial Advisor")
-st.header("Stage 1: Asset Class Recommendation")
+# Input Form
+st.header("Enter Customer Information")
 
-user_inputs = {}
-for feature in stage1_features:
-    user_inputs[feature] = st.number_input(f"Enter {feature}", value=0.0)
+with st.form("customer_form"):
+    Mthly_HH_Income = st.number_input("Monthly Household Income", value=50000)
+    Mthly_HH_Expense = st.number_input("Monthly Household Expense", value=20000)
+    Emi_or_Rent_Amt = st.number_input("EMI or Rent Amount", value=10000)
+    No_of_Earning_Members = st.number_input("Number of Earning Members", value=1)
+    Savings_Amount = st.number_input("Savings Amount", value=100000)
+    Investment_Horizon = st.slider("Investment Horizon (Years)", 1, 30, 5)
+    Risk_Tolerance = st.selectbox("Risk Tolerance", ["Low", "Medium", "High"])
+    Investment_Experience = st.selectbox("Investment Experience", ["Beginner", "Intermediate", "Advanced"])
+    Market_Volatility_Tolerance = st.selectbox("Market Volatility Tolerance", ["Low", "Medium", "High"])
+    Short_Term_Goal = st.selectbox("Short Term Goal", ["Yes", "No"])
+    Mid_Term_Goal = st.selectbox("Mid Term Goal", ["Yes", "No"])
+    Long_Term_Goal = st.selectbox("Long Term Goal", ["Yes", "No"])
+    Goal_Based_Investing = st.selectbox("Goal Based Investing", ["Yes", "No"])
+    Preferred_Investment_Type = st.selectbox("Preferred Investment Type", ["Equity", "Mutual Fund", "Debt", "None"])
 
-X1 = pd.DataFrame([user_inputs])
+    submitted = st.form_submit_button("Recommend Investment")
 
-if st.button("Predict Asset Class"):
+# After submit
+if submitted:
+
+    # Derived Features
+    Disposable_Income = Mthly_HH_Income - Mthly_HH_Expense - Emi_or_Rent_Amt
+    Adjusted_DTI = (Emi_or_Rent_Amt / (Mthly_HH_Income + 1)) * 100
+    Savings_Rate = (Savings_Amount / (Mthly_HH_Income + 1)) * 100
+    Debt_to_Income_Ratio = (Emi_or_Rent_Amt / (Mthly_HH_Income + 1)) * 100
+
+    X1 = pd.DataFrame([[
+        Mthly_HH_Income, Mthly_HH_Expense, Emi_or_Rent_Amt, No_of_Earning_Members,
+        Savings_Amount, Investment_Horizon, Risk_Tolerance, Investment_Experience,
+        Market_Volatility_Tolerance, Short_Term_Goal, Mid_Term_Goal, Long_Term_Goal,
+        Goal_Based_Investing, Preferred_Investment_Type, Adjusted_DTI, Savings_Rate,
+        Disposable_Income, Debt_to_Income_Ratio
+    ]], columns=[
+        'Mthly_HH_Income', 'Mthly_HH_Expense', 'Emi_or_Rent_Amt', 'No_of_Earning_Members',
+        'Savings_Amount', 'Investment_Horizon', 'Risk_Tolerance', 'Investment_Experience',
+        'Market_Volatility_Tolerance', 'Short_Term_Goal', 'Mid_Term_Goal', 'Long_Term_Goal',
+        'Goal_Based_Investing', 'Preferred_Investment_Type', 'Adjusted_DTI', 'Savings_Rate',
+        'Disposable_Income', 'Debt_to_Income_Ratio'
+    ])
+
+    # Stage 1 Prediction
     asset_class = stage1_model.predict(X1)[0]
-    st.success(f"Recommended Investment Asset Class: {asset_class}")
+    st.success(f"Recommended Asset Class: {asset_class}")
 
-    # --------------------------- Stage 2 ---------------------------
-    st.header("Stage 2: Recommend Specific Products")
+    # Stage 2 Prediction (Stock / MF)
+    X2 = X1.copy()
+    X2["Predicted_Asset"] = asset_class
+    recommendation = stage2_model.predict(X2)[0]
+    st.info(f"Recommended Product: {recommendation}")
 
-    # Dummy feature vector for Stage 2 (replace with real mapping)
-    stage2_features = pd.DataFrame([user_inputs])
+    # ------------------ Stage 3 (Dynamic Product List) ------------------
 
-    product_recommendation = stage2_model.predict(stage2_features)
-
-    st.success(f"Recommended Product: {product_recommendation}")
-
-    # --------------------------- Stage 3 ---------------------------
-    st.header("Stage 3: Recommended Stocks and Mutual Funds")
-
-    # Get Equity Data
+    # Get Stock Data
     stock_list = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "BAJFINANCE.NS"]
     stock_data = []
 
@@ -70,7 +83,7 @@ if st.button("Predict Asset Class"):
             "Product_Name": info.get('longName', ''),
             "Category": "Stock",
             "Risk_Level": "High" if info.get('beta', 1) > 1 else "Medium",
-            "Expected_Return (%)": round(info.get('forwardPE', 10),2),
+            "Expected_Return (%)": round(info.get('forwardPE', 10), 2),
             "Investment_Horizon (Years)": 5,
             "Volatility_Level": "High" if info.get('beta', 1) > 1 else "Medium"
         })
@@ -98,10 +111,15 @@ if st.button("Predict Asset Class"):
 
     df_mf = pd.DataFrame(mf_data)
 
+    # Combine Stage 3 Dataset
     df_stage3 = pd.concat([df_stocks, df_mf], ignore_index=True)
 
-    st.subheader("Recommended Stocks (Equity):")
-    st.dataframe(df_stocks.head(5))
+    # Filter Recommendations
+    df_recommend = df_stage3[
+        (df_stage3['Product_Type'] == asset_class) &
+        (df_stage3['Risk_Level'] == Risk_Tolerance) &
+        (df_stage3['Investment_Horizon (Years)'] <= Investment_Horizon)
+    ].sort_values(by='Expected_Return (%)', ascending=False).head(5)
 
-    st.subheader("Recommended Mutual Funds:")
-    st.dataframe(df_mf.head(5))
+    st.subheader("Top Recommended Products 🔥")
+    st.dataframe(df_recommend.reset_index(drop=True))
