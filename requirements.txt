@@ -1,8 +1,0 @@
-streamlit
-pandas
-numpy
-scikit-learn
-joblib
-yfinance
-beautifulsoup4
-requests
