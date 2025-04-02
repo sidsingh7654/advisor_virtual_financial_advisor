@@ -57,7 +57,7 @@ def recommend_products(df, allocation, risk_tolerance, top_n=3):
     df_filtered = df[df["Risk_Level"] == risk_tolerance]
     return df_filtered.sort_values(by='Expected_Return (%)', ascending=False).head(top_n)
 
-st.title("Financial Advisory Powered by AI")
+st.title("AI Financial Advisory")
 st.sidebar.header("User Financial Input")
 
 income = st.sidebar.number_input("Monthly Household Income ($)", min_value=1000, step=100)
